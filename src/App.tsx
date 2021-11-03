@@ -36,6 +36,7 @@ function App() {
     const [humidity, setHumidity] = useState(0);
     const [textRoom, setTextRoom] = useState("");
     const [servo, setServo] = useState("");
+    const [color, setColor] = useState({ R: 0, G: 0, B: 0 });
     useEffect(() => {
         function newNotification(message: string, title = "New notification!") {
             if (!("Notification" in window)) {
@@ -50,7 +51,10 @@ function App() {
                 Notification.requestPermission();
             }
         }
-
+        socket.on("buttonPressed", (message: any) => {
+            console.log(message);
+            newNotification("Botão pressionado!", "Botão");
+        });
         socket.on("rele", (message: any) => {
             console.log(message);
             if (message.status) {
@@ -80,6 +84,18 @@ function App() {
         socket.emit(event, body);
     }
 
+    function sendColor(color: string) {
+        const splited = color.split("");
+        const R = parseInt(splited[1] + splited[2], 16);
+        const G = parseInt(splited[3] + splited[4], 16);
+        const B = parseInt(splited[5] + splited[6], 16);
+        console.log({ R, G, B });
+        setColor({ R, G, B });
+    }
+    function handleColor(e: any) {
+        e.preventDefault();
+        emitMessage("ledColor", color);
+    }
     useEffect(() => {
         Notification.requestPermission();
     }, []);
@@ -87,7 +103,6 @@ function App() {
     return (
         <div className="App">
             <header className="App-header">
-                {/* <img src={logo} className="App-logo" alt="logo" /> */}
                 <span>
                     <p>
                         Temperatura: <b>{temp || "-"}ºC</b>
@@ -103,6 +118,13 @@ function App() {
                 <button onClick={() => emitMessage("create", textRoom)}>
                     Create room
                 </button>
+                <form onSubmit={handleColor}>
+                    <input
+                        type="color"
+                        onChange={(e) => sendColor(e.target.value)}
+                    />
+                    <button type="submit">Enviar</button>
+                </form>
                 <input
                     value={servo}
                     type="number"
@@ -121,18 +143,6 @@ function App() {
                         onClick={() => emitMessage("led", { status: false })}
                     >
                         Led Off
-                    </button>
-                </div>
-                <div>
-                    <button
-                        onClick={() => emitMessage("rele", { status: true })}
-                    >
-                        Rele On
-                    </button>
-                    <button
-                        onClick={() => emitMessage("rele", { status: false })}
-                    >
-                        Rele Off
                     </button>
                 </div>
                 <div>
